@@ -172,13 +172,20 @@ Credits
 -------
 
 Most of the credit belongs to the
+
 [DOSBox crew](http://www.dosbox.com/crew.php).
 They created DOSBox and made it compatible with a wide variety of DOS games.
+
 [Ismail Khatib](https://github.com/CeRiAl) got DOSBox
 to compile with Emscripten, but didn't get it to work.
+
 [Boris Gjenero](https://github.com/dreamlayers)
 started with that and got it to work. Then, Boris re-implemented
+
 Ismail's changes a cleaner way, fixed issues and improved performance to make
 many games usable in web browsers. Meanwhile,
+
 [Alon Zakai](https://github.com/kripken/) quickly fixed Emscripten bugs which
 were encountered and added helpful Emscripten features.
+
+[RDPStudio](https://github.com/rdp-studio/) Added a actions auto build script.
