@@ -1,0 +1,75 @@
+name: build-em-dosbox
+on:
+  push:
+    paths-ignore:
+      - 'dist/**'
+      - '**/README.md'
+  workflow_dispatch:
+
+jobs:
+  job_id:
+    name: build 
+    runs-on: ubuntu-latest
+    steps:
+        - name: Install Emscripten [latest]
+          uses: mymindstorm/setup-emsdk@v7
+          with:
+            version: 'latest'
+        - name: Checkout Repository
+          uses: actions/checkout@v2
+        - name: Detailing Versions
+          run: |
+            emcc -v
+        - name: Using Configure Flags
+          run: echo "./configure --enable-wasm --disable-opengl --host=none-none-none"
+        - name: Running Autogen
+          run: |
+            chmod +x autogen.sh
+            ./autogen.sh
+        - name: Configure and Build RELEASE Standard JS With HTML
+          run: |
+            echo "Building RELEASE Version [No Debugging Information] STANDARD"
+            export EMMAKEN_CFLAGS="-O3"
+            emconfigure ./configure --enable-wasm --disable-opengl --host=none-none-none
+            emmake make -j$(nproc)
+            cp src/dosbox.html src/dosbox.js src/dosbox.wasm src/packager.py dist/standard/release/
+            emmake make clean
+        - name: Configure and Build RELEASE ES6 JS Module
+          run: |
+            echo "Building RELEASE Version [No Debugging Information] ES6"
+            export EMMAKEN_CFLAGS="-O3"
+            emconfigure ./configure --enable-wasm --disable-opengl --host=none-none-none --enable-es6
+            emmake make -j$(nproc)
+            cp src/dosbox.js src/dosbox.wasm dist/es6/release/
+            emmake make clean
+        - name: Configure and Build DEBUG Standard JS With HTML
+          run: |
+            echo "Building DEBUG Version [Extra Debugging Information]"
+            export EMMAKEN_CFLAGS="-g --profiling --profiling-funcs"
+            emconfigure ./configure --enable-wasm --disable-opengl --host=none-none-none
+            sed -i 's/TOTAL_MEMORY=134217728/TOTAL_MEMORY=268435456/g' src/Makefile
+            emmake make -j$(nproc)
+            cp src/dosbox.html src/dosbox.js src/dosbox.wasm src/packager.py dist/standard/debug/
+            emmake make clean
+        - name: Configure and Build DEBUG ES6 JS Module
+          run: |
+            echo "Building DEBUG Version [Extra Debugging Information]"
+            export EMMAKEN_CFLAGS="-g --profiling --profiling-funcs"
+            emconfigure ./configure --enable-wasm --disable-opengl --host=none-none-none --enable-es6
+            sed -i 's/TOTAL_MEMORY=134217728/TOTAL_MEMORY=268435456/g' src/Makefile
+            emmake make -j$(nproc)
+            cp src/dosbox.js src/dosbox.wasm dist/es6/debug/
+        - name: Commit re-Distributables
+          run: |
+            git config --local user.email "noreply@rdpstudio.top"
+            git config --local user.name "RDPStudio Bot"
+            git add dist/standard/debug/dosbox.html dist/standard/debug/dosbox.js dist/standard/debug/dosbox.wasm dist/standard/debug/packager.py
+            git add dist/standard/release/dosbox.html dist/standard/release/dosbox.js dist/standard/release/dosbox.wasm dist/standard/release/packager.py
+            git add dist/es6/debug/dosbox.js dist/es6/debug/dosbox.wasm 
+            git add dist/es6/release/dosbox.js dist/es6/release/dosbox.wasm 
+            git commit -m "Update dist commit `git rev-parse --verify HEAD`"
+        - name: Publish Artifacts to Dist/
+          uses: ad-m/github-push-action@master
+          with:
+            github_token: ${{ secrets.GITHUB_TOKEN }}
+            branch: "main"
